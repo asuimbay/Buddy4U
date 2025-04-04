@@ -1,108 +1,66 @@
-# ASU Study Companion App (Streamlit Version)
-# Requirements: streamlit, pandas, matplotlib, PIL
-
 import streamlit as st
-import pandas as pd
-import datetime
-import random
-import matplotlib.pyplot as plt
 from PIL import Image
+from streamlit_extras.switch_page_button import switch_page
 
-# --- App Configuration ---
-st.set_page_config(page_title="ASU Anti-Procrastination Companion", layout="centered")
+# --- Page Config ---
+st.set_page_config(
+    page_title="Buddy4U - Future starts NOW!",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# --- Custom CSS ---
 st.markdown("""
 <style>
     .stApp {
-        background-color: #fdf6f0;
+        background-image: url("https://media.istockphoto.com/id/1218489981/vector/puzzled-student-making-choice-about-his-future-career-path.jpg?s=612x612&w=0&k=20&c=VDlf5Fvob5gEw_OmTxB0APi4nTjFEqFagu-mH6AKaHk=");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-position: center;
+        color: #ffffff;
     }
-    h1, h2, h3 {
-        color: maroon;
+    .block-container {
+        background-color: rgba(23, 23, 56, 0.85);
+        padding: 2rem;
+        border-radius: 18px;
+        box-shadow: 0px 0px 15px rgba(0,0,0,0.4);
+    }
+    h1, h2, h3, h4, h5, h6, .stMetricLabel, .stMetricValue {
+        color: #DFF3E4;
+    }
+    .stButton > button {
+        background-color: #3423A6;
+        color: white;
+        border-radius: 10px;
+        font-size: 16px;
+        padding: 0.6em 1.2em;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- Simulate Study Data ---
-today = datetime.date.today()
-dates = [today - datetime.timedelta(days=i) for i in range(29, -1, -1)]
-study_minutes = [random.choice([0, 30, 45, 60, 90]) if random.random() > 0.2 else 0 for _ in dates]
+# --- Splash Screen ---
+if "started" not in st.session_state:
+    st.session_state.started = False
 
-# Build DataFrame
-df = pd.DataFrame({"Date": dates, "Study Minutes": study_minutes})
-df["Studied"] = df["Study Minutes"] > 0
-df["Streak"] = 0
+if not st.session_state.started:
+    st.markdown("""
+    <div style='text-align: center;'>
+        <h1>🚀 Buddy4U - Future starts NOW!</h1>
+        <p style='font-size: 20px;'>Welcome to your ASU Anti-Procrastination Companion!<br>
+        Track your focus. Beat procrastination. Reach your graduation goals.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# --- Calculate Streak ---
-streak = 0
-for i in range(len(df)):
-    if df.loc[i, "Studied"]:
-        streak += 1
-    else:
-        streak = 0
-    df.loc[i, "Streak"] = streak
+    # Using st.image() for better integration with Streamlit
+    st.image("https://i.ibb.co/2dPQzSf/asu-path.png", caption="From path to graduation, each step counts!", use_column_width=True)
 
-# --- Procrastination Pattern Recognition ---
-df["Day"] = df["Date"].apply(lambda x: x.strftime("%A"))
-procrastination_days = df[df["Study Minutes"] == 0]["Day"].value_counts()
-most_skipped = procrastination_days.idxmax() if not procrastination_days.empty else "None"
+    if st.button("✨ Enter My Dashboard"):
+        st.session_state.started = True
+        switch_page("home")
 
-# --- Stats ---
-current_streak = df.iloc[-1]["Streak"]
-longest_streak = df["Streak"].max()
-total_minutes = df["Study Minutes"].sum()
-avg_minutes = df["Study Minutes"].mean()
-top_day = df.iloc[df["Study Minutes"].idxmax()]["Day"]
+    st.stop()
 
-# --- Header + Intro ---
-st.image("https://upload.wikimedia.org/wikipedia/en/thumb/d/dc/Arizona_State_University_logo.svg/1200px-Arizona_State_University_logo.svg.png", width=150)
-st.title("🎓 ASU Anti-Procrastination Companion")
-st.markdown("Welcome to your personalized study tracker! Stay focused, level up, and conquer procrastination.")
-
-# --- Disney-style ASU Pathway Intro ---
-st.subheader("✨ Your Journey to Graduation")
-st.image("https://i.ibb.co/2dPQzSf/asu-path.png", caption="From path to graduation, each step counts!", use_column_width=True)
-
-# --- Stats Cards ---
-st.markdown("---")
-st.subheader("📊 Your Study Overview")
-st.metric("🔥 Current Streak", f"{int(current_streak)} Days")
-st.metric("💪 Longest Streak", f"{int(longest_streak)} Days")
-st.metric("📅 Most Skipped Day", most_skipped)
-st.metric("⏰ Total Study Time", f"{int(total_minutes)} Minutes")
-
-# --- Chart ---
-st.markdown("### 📈 Study Trend")
-fig, ax = plt.subplots()
-ax.plot(df["Date"], df["Study Minutes"], marker='o', color='maroon')
-ax.set_title("Study Minutes per Day")
-ax.set_xlabel("Date")
-ax.set_ylabel("Minutes")
-plt.xticks(rotation=45)
-st.pyplot(fig)
-
-# --- Levels Map ---
-st.markdown("### 🗺️ Streak Levels Progress")
-levels = [3, 5, 7, 10]
-level_titles = ["📘 Level 1", "📗 Level 2", "📙 Level 3", "🎓 Graduation"]
-achieved = [current_streak >= lvl for lvl in levels]
-st.write(" -> ".join([f"{lvl} ✅" if ok else f"{lvl} ❌" for lvl, ok in zip(level_titles, achieved)]))
-
-# --- AI Habit Reminder ---
-if current_streak < 2:
-    st.warning("You seem to be falling behind. Try a 10-minute focus task to get back on track!")
-elif current_streak >= 5:
-    st.success("You're crushing it! You're only a few steps away from the next reward!")
-
-# --- Semester Wrapped ---
-st.markdown("---")
-st.subheader("🎉 Semester Wrapped")
-st.markdown(f"- Total Hours: {total_minutes / 60:.1f} hrs\n- Average Daily Study: {avg_minutes:.1f} mins\n- Most Productive Day: {top_day}")
-
-# --- Honourlock-like Section (Placeholder) ---
-st.markdown("---")
-st.subheader("🛡️ Secure Exam Mode")
-st.markdown("Enable a distraction-free, monitored mode during exams or study sessions. Integration with secure tools like Honourlock can be added here.")
-st.button("Activate Secure Mode")
-
-# --- Data Table ---
-st.markdown("### 🧾 Full Study Log")
-st.dataframe(df[["Date", "Study Minutes", "Streak"]].reset_index(drop=True))
+# Fallback content if session state fails (this shouldn't run under normal flow)
+st.title("Welcome to Buddy4U!")
+st.write("Please use the menu on the left to navigate.")
